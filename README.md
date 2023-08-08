@@ -1,10 +1,10 @@
 # Ethical Hacker Write-Ups
 
-Welcome to my repository of ethical hacking write-ups! In this repository, you'll find detailed explanations of various ethical hacking challenges, vulnerabilities, and techniques that I've encountered during my learning journey. These write-ups for strenghening my problem-solving skills and highlight the steps I took to identify and exploit them.
+Welcome to my repository of ethical hacking write-ups! In this repository, you'll find detailed explanations of various ethical hacking challenges, vulnerabilities, and techniques that I've encountered during my learning journey. These write-ups for strenghten my problem-solving skills and highlight the steps I took to identify and exploit vulnerabilities in different applications.
 
 ## About Me
 
-I'm a beginner ethical hacker passionate about cybersecurity and learning how to hack digital systems and applications. Through these write-ups, I hope to share my experiences, insights, and the knowledge I've gained with the community. Feel free to explore the different challenges and solutions I've documented here.
+I'm a novice ethical hacker passionate about cybersecurity and learning how to hack digital systems and web applications. Through these write-ups, I hope to share my experiences, insights, and the knowledge I've gained with the community. Feel free to explore the different challenges and solutions I've documented here.
 
 ## Write-Up Structure
 
