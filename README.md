@@ -4,7 +4,7 @@ Welcome to my repository of ethical hacking write-ups! In this repository, you'l
 
 ## About Me
 
-I'm a beginner ethical hacker passionate about cybersecurity and learning how to hack digital systems and applications. Through these write-ups, I hope to share my experiences, insights, and the knowledge I've gained with the community and myself. Feel free to explore the different challenges and solutions I've documented here.
+I'm a beginner ethical hacker passionate about cybersecurity and learning how to hack digital systems and applications. Through these write-ups, I hope to share my experiences, insights, and the knowledge I've gained with the community. Feel free to explore the different challenges and solutions I've documented here.
 
 ## Write-Up Structure
 
