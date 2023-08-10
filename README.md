@@ -19,7 +19,8 @@ Each write-up follows a similar structure:
 ## Contents
 
 - [CTF Event: AmateursCTF_2023](./AmateursCTF_2023/)
-  - Coming soon..
+  - [Web: ](./AmateursCTF_2023/Web)
+        - [sanity: ](./AmateursCTF_2023/Web/sanity.md)
 
 ## Getting Started
 
