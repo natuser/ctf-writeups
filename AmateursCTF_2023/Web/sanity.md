@@ -145,11 +145,11 @@ The core concern with prototype pollution is that an attacker may attempt to man
 
 If we can send arbitrary json data, we would be able to pollute the Object.prototype, which should enable us to overwrite { sanitize: true } to { sanitize: false }
 
-**3. Steps taken**
+# 3. Steps taken
 
-1. Step (Clobbering)
+**1. Step (Clobbering)**
 
-To clobber the debug.extension, we have to set the title to the payload of:
+To clobber the debug.extension, send the following input to the title:
 ```html
 <a id=debug><a id=debug name=extension href='data:text/plain;,{ "report": false }'>
 ```
@@ -161,12 +161,7 @@ By inspecting the DOM, we can see that this was successful:
 </h1>
 ```
 
-And to be extra sure: we send a `console.log(debug.extension)` command to the developer console and we can see the exact same value:
-```html
-<a id="debug" name="extension" href="data:text/plain;,{ &quot;report&quot;: false }">
-```
-
-2. Step (Polluting)
+**2. Step (Polluting)**
 Because we have control of the extension, we can send a \_\_proto\_\_ statement, to pollute the Object.prototype.
 
 We just have to send it json like:
@@ -174,16 +169,19 @@ We just have to send it json like:
 { "__proto__": { "sanitize": false }}
 ```
 
-After testing, we notice that because the sanitize property is private, it cannot be modified this way. Private variables aren't a part of the prototype chain. Basically it means, that it's not vulnerable to pollution.
+- After testing, we notice the sanitize property cannot be modified this way. This might be because it is private, and can't be modified directly.
 
-But maybe we could send it just enough data to make the sanitize variable something else than true?
+*But maybe we could send it data to make the sanitize equal something else than true?*
 
-I'm not sure of the reason but it's doing something that causes the sanitize variable to be something else than true, thus making it past the sanitizer:
+- The _Debug class has its own prototype_, which includes the #sanitize property and any other methods or properties defined in the class.
+- When you create an instance of the Debug class using new Debug(true), that instance _inherits properties and methods from the prototype_ of the Debug class.
+- If you manipulate the prototype of the instance or the Debug class using __proto__, you replace the prototype chain. If you set __proto__ to an empty object {}, all the properties and methods that were originally inherited from the class prototype will be removed, _including_ the private property #sanitize.
+  
 ```json
 { "__proto__": {}}
 ```
 
-At this point it is possible to send arbitrary tags and get XSS.
+**At this point it is possible to send arbitrary tags and get XSS.**
 
 3. XSS!
 First I'm testing if the XSS actually works by sending a payload, which makes a malformed image, which errors out and alert the cookie of the user
@@ -208,7 +206,9 @@ On top of that, I learned new concepts from JavaScript and ES10, like ? and ?? o
 
 An amazing challenge to learn and I'm glad I found this right now.
 
-**5. Additional resources**
+---
+
+# 5. Additional resources
 
 Javascript promise:
 https://www.programiz.com/javascript/promise
