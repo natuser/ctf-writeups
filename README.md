@@ -20,7 +20,7 @@ Each write-up follows a similar structure:
 
 - [CTF Event: AmateursCTF_2023](./AmateursCTF_2023/)
   - [Web: ](./AmateursCTF_2023/Web)
-        - [sanity: ](./AmateursCTF_2023/Web/sanity.md)
+    - [sanity](./AmateursCTF_2023/Web/sanity.md)
 
 ## Getting Started
 
